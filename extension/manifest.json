@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "StudyTube - AI YouTube Study Assistant",
+  "version": "1.0.0",
+  "description": "AI study assistant embedded in YouTube side panel. Chat, cite timestamps, summarize, and quiz.",
+  "permissions": [
+    "sidePanel",
+    "tabs",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "http://localhost:8501/*",
+    "http://127.0.0.1:8501/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open StudyTube",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.youtube.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; frame-src 'self' http://localhost:8501 http://127.0.0.1:8501;"
+  }
+}

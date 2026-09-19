@@ -1,0 +1,1 @@
+"""StudyTube core module."""

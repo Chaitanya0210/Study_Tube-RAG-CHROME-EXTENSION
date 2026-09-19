@@ -1,0 +1,1 @@
+"""StudyTube Streamlit application package."""
