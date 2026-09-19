@@ -3,8 +3,13 @@
  * Handles tab monitoring, server health checks, iframe embedding, and seek message forwarding.
  */
 
-const SERVER_BASE = "http://localhost:8501";
-const HEALTH_URL = `${SERVER_BASE}/_stcore/health`;
+// Server endpoints: probes cloud deployment first, then falls back to local server
+const ENDPOINTS = [
+  "https://studytube-assistant.streamlit.app",
+  "http://localhost:8501",
+];
+
+let activeServerBase = ENDPOINTS[0];
 
 // DOM Elements
 const appFrame = document.getElementById("app-frame");
@@ -59,23 +64,28 @@ function extractVideoId(url) {
   return null;
 }
 
-// Ping the Streamlit server health endpoint
+// Ping candidate Streamlit server health endpoints
 async function checkServerHealth() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-  try {
-    const res = await fetch(HEALTH_URL, {
-      method: "GET",
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    clearTimeout(timeoutId);
-    return res.ok || res.status === 200;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    return false;
+  for (const base of ENDPOINTS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    try {
+      const res = await fetch(`${base}/_stcore/health`, {
+        method: "GET",
+        signal: controller.signal,
+        cache: "no-store",
+      });
+      clearTimeout(timeoutId);
+      if (res.ok || res.status === 200) {
+        activeServerBase = base;
+        console.log("[StudyTube SidePanel] Connected to endpoint:", base);
+        return true;
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+    }
   }
+  return false;
 }
 
 // Sync side panel with currently active browser tab
@@ -110,7 +120,7 @@ async function syncWithActiveTab() {
   // Load or update iframe only if video changed
   if (currentLoadedVideoId !== videoId) {
     currentLoadedVideoId = videoId;
-    const targetUrl = `${SERVER_BASE}/?embed=true&video_url=${encodeURIComponent(activeTab.url)}`;
+    const targetUrl = `${activeServerBase}/?embed=true&video_url=${encodeURIComponent(activeTab.url)}`;
     console.log("[StudyTube SidePanel] Embedding Streamlit for video:", videoId);
     appFrame.src = targetUrl;
   }
